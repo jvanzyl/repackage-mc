@@ -11,5 +11,5 @@ jobs:
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
-      - name: Repackage AWS CLI v2 for Darwin
+      - name: Repackage Midnight Commander
         run: ./repackage-mc

@@ -3,8 +3,10 @@
 set -E
 trap 'echo Failed on line: $LINENO at command: $BASH_COMMAND && exit $?' ERR
 
-sudo -i /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install mc
+if [ -z $LOCAL ]; then
+  sudo -i /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  brew install mc
+fi
 
 # Take a build of midnight commander made with brew and make it relocatable
 target="$(pwd)/target"
@@ -76,5 +78,6 @@ cd "${target}/bin"
 ln -sf mc mcdiff
 ln -sf mc mcedit
 ln -sf mc mcview
-
-tar -cvzf ${target}/repackage/mc-Darwin-x86_64-4.8.27.tar.gz
+cd -
+mkdir -p repackage
+tar -cvzf repackage/mc-Darwin-x86_64-4.8.27.tar.gz ${target}/*
