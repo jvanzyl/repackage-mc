@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+set -E
+trap 'echo Failed on line: $LINENO at command: $BASH_COMMAND && exit $?' ERR
+
+sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install mc
+
+# Take a build of midnight commander made with brew and make it relocatable
+target="$(pwd)/target"
+rm -rf ${target} > /dev/null 2>&1
+brewMc="/usr/local/Cellar/midnight-commander/4.8.27"
+mkdir -p ${target}
+cp -r ${brewMc}/* ${target}
+
+SRC="${target}/bin/mc"
+LIB="${target}/lib/"
+mkdir -p $LIB
+
+# Make the library paths relative to the binary
+EXEC=@executable_path/../lib/
+
+# This assumes that all the required libraries are installed. So using brew here
+# to get the necessary libraries is useful.
+CPL="/usr/local/lib/"
+CPL2="/usr/local/opt/"
+
+get_dylibs() {
+  echo $(otool -L $1 | grep -E "/opt.*dylib[^:]" | awk -F' ' '{ print $1 }')
+}
+
+fix_dylib() {
+  DYLIBS=$(get_dylibs $1)
+  for dylib in $DYLIBS; do
+    echo "> ${dylib}"
+
+    lib="$CPL$(basename $dylib)"
+    if [ ! -f ${lib} ]; then
+      lib="$CPL2$(basename $dylib)"
+    fi
+
+    if [ -f ${lib} ]; then
+      cp -f ${lib} $LIB
+      chmod 755 ${lib}
+      install_name_tool -change $dylib $EXEC$(basename $dylib) $1
+    fi
+
+    DYLIBS2=$(get_dylibs $dylib)
+    for dylib2 in $DYLIBS2; do
+      echo ">> ${dylib2}"
+      lib2="$dylib2"
+      cp -f ${lib2} $LIB
+      chmod 755 $LIB$(basename $dylib2)
+      install_name_tool -change $dylib2 $EXEC$(basename $dylib2) $LIB$(basename $dylib)
+
+      DYLIBS3=$(get_dylibs $LIB$(basename $dylib2))
+      for dylib3 in $DYLIBS3; do
+        echo ">>> ${dylib3}"
+        lib3="$dylib3"
+        cp -f ${lib3} $LIB
+        chmod 755 $LIB$(basename $dylib3)
+        install_name_tool -change $dylib3 $EXEC$(basename $dylib3) $LIB$(basename $dylib2)
+      done
+    done
+  done
+
+  for dylib in $LIB*; do
+    install_name_tool -id $(basename $dylib) $dylib
+  done
+
+}
+
+fix_dylib $SRC 1
+
+cd "${target}/bin"
+ln -sf mc mcdiff
+ln -sf mc mcedit
+ln -sf mc mcview
+
+tar -cvzf ${target}/repackage/mc-Darwin-x86_64-4.8.27.tar.gz

@@ -1,0 +1,17 @@
+name: release
+
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  build:
+    runs-on: macos-11
+    permissions:
+      contents: write
+    steps:
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "repackage/*.tar.gz"
+          token: ${{ secrets.GITHUB_TOKEN }}
