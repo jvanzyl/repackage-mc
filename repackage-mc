@@ -3,7 +3,7 @@
 set -E
 trap 'echo Failed on line: $LINENO at command: $BASH_COMMAND && exit $?' ERR
 
-sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+sudo -i /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install mc
 
 # Take a build of midnight commander made with brew and make it relocatable
