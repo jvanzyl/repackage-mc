@@ -11,6 +11,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v2
+      - name: Repackage Midnight Commander
+        run: ./repackage-mc
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "repackage/*.tar.gz"
